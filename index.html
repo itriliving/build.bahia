@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Villa Bahia - Financial Analysis Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #0284c7;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-gray: #1f2937;
+            --light-gray: #f3f4f6;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            padding: 30px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .sync-status {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sync-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .sync-indicator.error {
+            background-color: #ef4444;
+            animation: none;
+        }
+
+        .sync-indicator.loading {
+            background-color: #f59e0b;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Tab Navigation */
+        .tabs {
+            background-color: var(--white);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .tab-list {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--dark-gray);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background-color: var(--light-gray);
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Card Styles */
+        .card {
+            background-color: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+
+        /* Grid Layouts */
+        .grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .kpi-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .kpi-trend {
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .trend-up {
+            color: var(--success-color);
+        }
+
+        .trend-down {
+            color: var(--danger-color);
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover {
+            background-color: #f9fafb;
+        }
+
+        /* Progress Bars */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--success-color);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background-color: #1e40af;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        /* Select Dropdown */
+        select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background-color: var(--white);
+            cursor: pointer;
+        }
+
+        /* Alert Boxes */
+        .alert {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fbbf24;
+        }
+
+        .alert-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #f87171;
+        }
+
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #34d399;
+        }
+
+        .alert-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #60a5fa;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Data Source Info */
+        .data-source-info {
+            background-color: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.875rem;
+        }
+
+        .data-source-info strong {
+            color: var(--primary-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .tab-list {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            .tabs, .btn, select {
+                display: none;
+            }
+            
+            .card {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>Villa Bahia Financial Analysis Dashboard</h1>
+            <p class="header-subtitle">Construction Project Financial Tracking & Analysis (2022 - Present)</p>
+            <div class="sync-status">
+                <div class="sync-indicator" id="syncIndicator"></div>
+                <span id="syncStatus">Ready</span>
+                <button class="btn btn-secondary" style="margin-left: 20px;" onclick="generateData()">
+                    <span>🔄</span> Generate Sample Data
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tabs">
+        <div class="tab-list">
+            <button class="tab-button active" onclick="showTab('executive', this)">Executive Summary</button>
+            <button class="tab-button" onclick="showTab('cashflow', this)">Cash Flow Analysis</button>
+            <button class="tab-button" onclick="showTab('vendors', this)">Vendor Analysis</button>
+            <button class="tab-button" onclick="showTab('financing', this)">Financing Structure</button>
+            <button class="tab-button" onclick="showTab('costs', this)">Cost Breakdown</button>
+            <button class="tab-button" onclick="showTab('kpis', this)">KPIs & Metrics</button>
+            <button class="tab-button" onclick="showTab('risk', this)">Risk Analysis</button>
+            <button class="tab-button" onclick="showTab('projections', this)">Projections</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Data Source Info -->
+        <div class="data-source-info" id="dataSourceInfo">
+            <strong>Data Source:</strong> <span id="dataSourceText">Sample data loaded for demonstration</span>
+        </div>
+
+        <!-- Executive Summary Tab -->
+        <div id="executive" class="tab-content active">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Investment Planned</div>
+                    <div class="kpi-value">$1.76M</div>
+                    <div class="kpi-trend trend-up">MAD 15,840,000</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Investment Realized</div>
+                    <div class="kpi-value" id="investmentRealized">$875K</div>
+                    <div class="kpi-trend" id="investmentProgress">49.5% Complete</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Monthly Burn Rate</div>
+                    <div class="kpi-value" id="burnRate">$65K</div>
+                    <div class="kpi-trend" id="burnTrend">MAD 585K/month</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Cash Runway</div>
+                    <div class="kpi-value" id="cashRunway">14</div>
+                    <div class="kpi-trend">Months Remaining</div>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Project Status Overview</h2>
+                    </div>
+                    <div class="alert alert-warning" id="budgetAlert">
+                        <span>⚠️</span>
+                        <span>Construction budget variance: <span id="budgetVariance">+2.5%</span></span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="projectStatusChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Investment Breakdown</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="investmentBreakdownChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Executive Financial Summary</h2>
+                </div>
+                <div class="table-container">
+                    <table id="executiveSummaryTable">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Budget (MAD)</th>
+                                <th>Actual (MAD)</th>
+                                <th>Variance</th>
+                                <th>% Complete</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Land Acquisition</td>
+                                <td>3,870,000</td>
+                                <td id="landActual">3,870,000</td>
+                                <td id="landVariance">0%</td>
+                                <td id="landProgress">100%</td>
+                                <td><span class="badge badge-success" id="landStatus">Complete</span></td>
+                            </tr>
+                            <tr>
+                                <td>Construction</td>
+                                <td>4,500,000</td>
+                                <td id="constructionActual">2,250,000</td>
+                                <td id="constructionVariance">0%</td>
+                                <td id="constructionProgress">50%</td>
+                                <td><span class="badge badge-success" id="constructionStatus">In Progress</span></td>
+                            </tr>
+                            <tr>
+                                <td>Bank Fees & Charges</td>
+                                <td>200,000</td>
+                                <td id="bankFeesActual">85,000</td>
+                                <td id="bankFeesVariance">0%</td>
+                                <td id="bankFeesProgress">42.5%</td>
+                                <td><span class="badge badge-success" id="bankFeesStatus">Ongoing</span></td>
+                            </tr>
+                            <tr>
+                                <td>Equipment & Finishing</td>
+                                <td>4,680,000</td>
+                                <td id="equipmentActual">0</td>
+                                <td id="equipmentVariance">0%</td>
+                                <td id="equipmentProgress">0%</td>
+                                <td><span class="badge badge-warning" id="equipmentStatus">Pending</span></td>
+                            </tr>
+                            <tr style="font-weight: bold; background-color: #f3f4f6;">
+                                <td>TOTAL</td>
+                                <td>15,840,000</td>
+                                <td id="totalActual">7,875,000</td>
+                                <td id="totalVariance">-0.8%</td>
+                                <td id="totalProgress">49.5%</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Key Insights -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Key Insights & Recommendations</h2>
+                </div>
+                <div id="keyInsights">
+                    <div class="alert alert-info" style="margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 5px 0; font-size: 1.1rem;">Project Progress</h4>
+                        <p style="margin: 0;">Project is 49.5% complete based on spending analysis. Entering mid-stage development phase.</p>
+                    </div>
+                    <div class="alert alert-info" style="margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 5px 0; font-size: 1.1rem;">Spending Pattern</h4>
+                        <p style="margin: 0;">Average monthly burn rate is MAD 585K. At this rate, project completion expected in 14 months.</p>
+                    </div>
+                    <div class="alert alert-success" style="margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 5px 0; font-size: 1.1rem;">Financing Status</h4>
+                        <p style="margin: 0;">82% of expenses covered by loans. Strong external financing secured.</p>
+                    </div>
+                    <div class="alert alert-success" style="margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 5px 0; font-size: 1.1rem;">Banking Efficiency</h4>
+                        <p style="margin: 0;">Bank fees represent 1.08% of total costs. Excellent cost management.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cash Flow Analysis Tab -->
+        <div id="cashflow" class="tab-content">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Inflows</div>
+                    <div class="kpi-value" id="totalInflows">$720K</div>
+                    <div class="kpi-trend">All Sources</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Outflows</div>
+                    <div class="kpi-value" id="totalOutflows">$875K</div>
+                    <div class="kpi-trend">All Expenses</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Net Cash Position</div>
+                    <div class="kpi-value" id="netCashPosition">-$155K</div>
+                    <div class="kpi-trend" id="cashTrend">Negative</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Working Capital</div>
+                    <div class="kpi-value" id="workingCapital">$245K</div>
+                    <div class="kpi-trend">Current Assets - Liabilities</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Monthly Cash Flow Trend</h2>
+                    <select id="cashflowPeriod" onchange="updateCashflowChart()">
+                        <option value="all">All Time</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                        <option value="2022">2022</option>
+                    </select>
+                </div>
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="cashflowChart"></canvas>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Recent Transactions</h2>
+                    </div>
+                    <div class="table-container" style="max-height: 300px; overflow-y: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentTransactions">
+                                <tr>
+                                    <td>2025-01-10</td>
+                                    <td>Construction Payment - Phase 3</td>
+                                    <td>MAD 125,000</td>
+                                    <td><span style="color: #ef4444;">Outflow</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2025-01-05</td>
+                                    <td>Bank Loan Disbursement</td>
+                                    <td>MAD 300,000</td>
+                                    <td><span style="color: #10b981;">Inflow</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Cash Flow Categories</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vendor Analysis Tab -->
+        <div id="vendors" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Top Contractors by Payment Volume</h2>
+                    <select id="vendorFilter" onchange="filterVendors()">
+                        <option value="all">All Categories</option>
+                        <option value="construction">Construction</option>
+                        <option value="fees">Bank Fees</option>
+                        <option value="loan">Loan Repayments</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="grid grid-2">
+                    <div class="chart-container">
+                        <canvas id="vendorChart"></canvas>
+                    </div>
+                    <div class="table-container">
+                        <table id="vendorTable">
+                            <thead>
+                                <tr>
+                                    <th>Contractor</th>
+                                    <th>Total Paid (MAD)</th>
+                                    <th>Payments</th>
+                                    <th>Category</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vendorTableBody">
+                                <tr>
+                                    <td>ATLAS Construction</td>
+                                    <td>1,250,000</td>
+                                    <td>8</td>
+                                    <td>Construction</td>
+                                </tr>
+                                <tr>
+                                    <td>Pro Béton SARL</td>
+                                    <td>875,000</td>
+                                    <td>5</td>
+                                    <td>Construction</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Payment Distribution Analysis</h2>
+                </div>
+                <div class="grid grid-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Active Vendors</div>
+                        <div class="kpi-value" id="activeVendors">12</div>
+                        <div class="kpi-trend">Total Contractors</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Avg Transaction Size</div>
+                        <div class="kpi-value" id="avgTransaction">$18.5K</div>
+                        <div class="kpi-trend">Per Payment</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Payment Frequency</div>
+                        <div class="kpi-value" id="paymentFrequency">7</div>
+                        <div class="kpi-trend">Days Between Payments</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financing Structure Tab -->
+        <div id="financing" class="tab-content">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Loans Received</div>
+                    <div class="kpi-value" id="totalLoans">$720K</div>
+                    <div class="kpi-trend">All Lenders</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Bank Fees Paid</div>
+                    <div class="kpi-value" id="totalBankFees">$9.4K</div>
+                    <div class="kpi-trend" id="bankFeesRate">Transaction Costs</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Loan-to-Cost Ratio</div>
+                    <div class="kpi-value" id="ltcRatio">40.9%</div>
+                    <div class="kpi-trend">Of Total Project</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Interest Rate</div>
+                    <div class="kpi-value" id="interestRate">2.5%</div>
+                    <div class="kpi-trend">Annual Rate</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Financing Sources Breakdown</h2>
+                </div>
+                <div class="grid grid-2">
+                    <div class="chart-container">
+                        <canvas id="financingPieChart"></canvas>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 15px;">Loan Details by Lender</h3>
+                        <div id="lenderDetails">
+                            <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                                <h4 style="margin: 0 0 10px 0; color: #1e3a8a;">KEF INVESTMENT</h4>
+                                <table style="width: 100%; font-size: 0.9rem;">
+                                    <tr>
+                                        <td>Total Loans:</td>
+                                        <td style="text-align: right; font-weight: 600;">MAD 6,480,000</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Number of Loans:</td>
+                                        <td style="text-align: right;">10</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Average Loan:</td>
+                                        <td style="text-align: right;">MAD 648,000</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Est. Annual Interest:</td>
+                                        <td style="text-align: right; color: #ef4444;">MAD 162,000</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Loan Injection Timeline</h2>
+                </div>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="loanTimelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cost Breakdown Tab -->
+        <div id="costs" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Construction Cost Analysis</h2>
+                </div>
+                <div class="grid grid-4">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Cost per Suite</div>
+                        <div class="kpi-value" id="costPerSuite">$175K</div>
+                        <div class="kpi-trend">Total / 5 Suites</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Cost per m²</div>
+                        <div class="kpi-value" id="costPerSqm">$500</div>
+                        <div class="kpi-trend">Construction Area</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Budget Utilization</div>
+                        <div class="kpi-value" id="budgetUtilization">49.5%</div>
+                        <div class="kpi-trend">Of Total Budget</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Cost Overrun Risk</div>
+                        <div class="kpi-value" id="overrunRisk" style="color: #10b981;">Low</div>
+                        <div class="kpi-trend">Based on Current Trend</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3 class="card-title">Cost by Category</h3>
+                        <div class="chart-container">
+                            <canvas id="costCategoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">Monthly Spending Trend</h3>
+                        <div class="chart-container">
+                            <canvas id="monthlySpendingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs & Metrics Tab -->
+        <div id="kpis" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Key Performance Indicators Dashboard</h2>
+                </div>
+                
+                <h3 style="margin: 20px 0;">Financial Health Metrics</h3>
+                <div class="grid grid-4">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Cost Performance Index</div>
+                        <div class="kpi-value" id="cpi">0.98</div>
+                        <div class="kpi-trend" id="cpiTrend">⚠️ Over Budget</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Schedule Performance Index</div>
+                        <div class="kpi-value" id="spi">1.02</div>
+                        <div class="kpi-trend" id="spiTrend">✓ On Schedule</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Cash Conversion Cycle</div>
+                        <div class="kpi-value" id="ccc">92</div>
+                        <div class="kpi-trend">Days</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Payment Velocity</div>
+                        <div class="kpi-value" id="paymentVelocity">7</div>
+                        <div class="kpi-trend">Days Between Payments</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 20px 0;">Operational Efficiency Metrics</h3>
+                <div class="grid grid-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Banking Fees %</div>
+                        <div class="kpi-value" id="bankingFeesPercent">1.08%</div>
+                        <div class="kpi-trend">Of Total Costs</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Financing Efficiency</div>
+                        <div class="kpi-value" id="financingEfficiency">82.3%</div>
+                        <div class="kpi-trend">Loans to Total Investment</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Cost Control Effectiveness</div>
+                        <div class="kpi-value" id="costControl">97.5%</div>
+                        <div class="kpi-trend">Budget Adherence</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Performance Trends</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="performanceTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Budget vs Actual Progress</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="budgetProgressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Analysis Tab -->
+        <div id="risk" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Risk Assessment Matrix</h2>
+                </div>
+                
+                <div class="grid grid-2">
+                    <div>
+                        <h3>Critical Risks Identified</h3>
+                        <div id="riskAlerts">
+                            <div class="alert alert-success">All risk indicators within acceptable ranges.</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="riskMatrixChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-3">
+                <div class="card">
+                    <h3 class="card-title">Cash Flow Risk</h3>
+                    <div class="kpi-value" style="text-align: center; margin: 20px 0;">
+                        <span id="cashflowRisk" style="font-size: 3rem; color: #10b981;">Low</span>
+                    </div>
+                    <p style="text-align: center;" id="cashflowRiskDesc">Stable funding sources</p>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Budget Overrun Risk</h3>
+                    <div class="kpi-value" style="text-align: center; margin: 20px 0;">
+                        <span id="budgetRisk" style="font-size: 3rem; color: #10b981;">Low</span>
+                    </div>
+                    <p style="text-align: center;" id="budgetRiskDesc">Within budget parameters</p>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Timeline Risk</h3>
+                    <div class="kpi-value" style="text-align: center; margin: 20px 0;">
+                        <span id="timelineRisk" style="font-size: 3rem; color: #10b981;">Low</span>
+                    </div>
+                    <p style="text-align: center;" id="timelineRiskDesc">On schedule</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Risk Mitigation Recommendations</h2>
+                </div>
+                <div id="riskRecommendations">
+                    <div class="alert alert-success">
+                        <span>✓</span>
+                        <span>Project is progressing well within acceptable risk parameters. Continue current management practices.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projections Tab -->
+        <div id="projections" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Financial Projections & Scenarios</h2>
+                </div>
+                
+                <div class="alert alert-info">
+                    <span>📊</span>
+                    <span>Projections based on current spending patterns and historical data</span>
+                </div>
+
+                <div class="grid grid-4">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Est. Completion Cost</div>
+                        <div class="kpi-value" id="estCompletionCost">$1.78M</div>
+                        <div class="kpi-trend">Based on Current Trend</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Additional Financing Need</div>
+                        <div class="kpi-value" id="additionalFinancing">$185K</div>
+                        <div class="kpi-trend">Gap Analysis</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Est. Completion Date</div>
+                        <div class="kpi-value" id="estCompletionDate">Mar 2026</div>
+                        <div class="kpi-trend">Based on Progress</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">ROI Timeline</div>
+                        <div class="kpi-value" id="roiTimeline">17</div>
+                        <div class="kpi-trend">Months to Positive</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Cash Flow Projections (Next 12 Months)</h3>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="projectionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="card">
+                        <h3>Best Case Scenario</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="padding: 10px 0;">Completion Cost: <strong id="bestCaseCost">$1.60M</strong></li>
+                            <li style="padding: 10px 0;">Timeline: <strong id="bestCaseTime">11 months</strong></li>
+                            <li style="padding: 10px 0;">ROI Start: <strong id="bestCaseROI">Feb 2026</strong></li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>Most Likely Scenario</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="padding: 10px 0;">Completion Cost: <strong id="likelyCaseCost">$1.78M</strong></li>
+                            <li style="padding: 10px 0;">Timeline: <strong id="likelyCaseTime">14 months</strong></li>
+                            <li style="padding: 10px 0;">ROI Start: <strong id="likelyCaseROI">Jun 2026</strong></li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>Worst Case Scenario</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="padding: 10px 0;">Completion Cost: <strong id="worstCaseCost">$2.31M</strong></li>
+                            <li style="padding: 10px 0;">Timeline: <strong id="worstCaseTime">21 months</strong></li>
+                            <li style="padding: 10px 0;">ROI Start: <strong id="worstCaseROI">Oct 2026</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let charts = {};
+        let processedData = {
+            totalInflows: 6480000,
+            totalOutflows: 7875000,
+            monthlyData: {},
+            vendors: {},
+            loans: {},
+            categories: {
+                construction: 2250000,
+                'bank fees': 85000,
+                equipment: 0,
+                land: 3870000,
+                other: 125000
+            }
+        };
+
+        // MAD to USD conversion rate
+        const MAD_TO_USD = 1 / 9;
+
+        // Budget configuration
+        const BUDGET_CONFIG = {
+            totalPlanned: 15840000,
+            phases: {
+                land: 3870000,
+                construction: 4500000,
+                equipment: 4680000,
+                operating: 2790000
+            }
+        };
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeCharts();
+            generateData();
+        });
+
+        // Tab switching functionality
+        function showTab(tabName, button) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked button
+            button.classList.add('active');
+            
+            // Update charts if needed
+            if (charts[tabName + 'Chart']) {
+                charts[tabName + 'Chart'].update();
+            }
+        }
+
+        // Generate sample data
+        function generateData() {
+            const syncStatus = document.getElementById('syncStatus');
+            const syncIndicator = document.getElementById('syncIndicator');
+            
+            syncStatus.textContent = 'Generating data...';
+            syncIndicator.className = 'sync-indicator loading';
+            
+            // Simulate data generation
+            setTimeout(() => {
+                generateSampleData();
+                updateAllDisplays();
+                
+                syncStatus.textContent = 'Data loaded successfully';
+                syncIndicator.className = 'sync-indicator';
+            }, 500);
+        }
+
+        // Generate sample monthly data
+        function generateSampleData() {
+            const months = ['2022-03', '2022-06', '2022-09', '2022-12',
+                          '2023-01', '2023-04', '2023-07', '2023-10',
+                          '2024-01', '2024-04', '2024-07', '2024-10',
+                          '2025-01'];
+            
+            months.forEach((month, index) => {
+                processedData.monthlyData[month] = {
+                    inflows: index % 3 === 0 ? 648000 : 0,
+                    outflows: 585000 + (Math.random() * 200000 - 100000),
+                    net: 0
+                };
+                processedData.monthlyData[month].net = 
+                    processedData.monthlyData[month].inflows - 
+                    processedData.monthlyData[month].outflows;
+            });
+            
+            // Sample vendors
+            processedData.vendors = {
+                'ATLAS Construction': { total: 1250000, count: 8, category: 'Construction' },
+                'Pro Béton SARL': { total: 875000, count: 5, category: 'Construction' },
+                'Électricité Moderne': { total: 450000, count: 4, category: 'Construction' },
+                'Plomberie Express': { total: 325000, count: 3, category: 'Construction' },
+                'CIH Bank': { total: 85000, count: 12, category: 'Bank Fees' }
+            };
+            
+            // Sample loans
+            processedData.loans = {
+                'KEF INVESTMENT': { 
+                    total: 6480000, 
+                    count: 10, 
+                    dates: months.filter((_, i) => i % 3 === 0).map(m => new Date(m))
+                }
+            };
+        }
+
+        // Update all displays
+        function updateAllDisplays() {
+            updateKPIs();
+            updateCharts();
+        }
+
+        // Update KPIs
+        function updateKPIs() {
+            // Executive Summary KPIs
+            const totalInvestmentRealized = processedData.totalOutflows;
+            const monthlyBurnRate = 585000;
+            const cashRunway = Math.floor((BUDGET_CONFIG.totalPlanned - totalInvestmentRealized) / monthlyBurnRate);
+            
+            document.getElementById('investmentRealized').textContent = 
+                `$${(totalInvestmentRealized * MAD_TO_USD / 1000).toFixed(0)}K`;
+            document.getElementById('investmentProgress').textContent = 
+                `${((totalInvestmentRealized / BUDGET_CONFIG.totalPlanned) * 100).toFixed(1)}% Complete`;
+            document.getElementById('burnRate').textContent = 
+                `$${(monthlyBurnRate * MAD_TO_USD / 1000).toFixed(0)}K`;
+            document.getElementById('burnTrend').textContent = 
+                `MAD ${(monthlyBurnRate / 1000).toFixed(0)}K/month`;
+            document.getElementById('cashRunway').textContent = cashRunway;
+            
+            // Cash Flow KPIs
+            document.getElementById('totalInflows').textContent = 
+                `$${(processedData.totalInflows * MAD_TO_USD / 1000).toFixed(0)}K`;
+            document.getElementById('totalOutflows').textContent = 
+                `$${(processedData.totalOutflows * MAD_TO_USD / 1000).toFixed(0)}K`;
+            const netPosition = processedData.totalInflows - processedData.totalOutflows;
+            document.getElementById('netCashPosition').textContent = 
+                `$${(netPosition * MAD_TO_USD / 1000).toFixed(0)}K`;
+            document.getElementById('cashTrend').textContent = 
+                netPosition >= 0 ? 'Positive' : 'Negative';
+        }
+
+        // Initialize all charts
+        function initializeCharts() {
+            // Configure Chart.js defaults
+            Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            
+            // Project Status Chart
+            const projectStatusCtx = document.getElementById('projectStatusChart').getContext('2d');
+            charts.projectStatus = new Chart(projectStatusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Land', 'Construction', 'Bank Fees', 'Remaining'],
+                    datasets: [{
+                        data: [24.4, 14.2, 0.5, 60.9],
+                        backgroundColor: ['#1e3a8a', '#0284c7', '#f59e0b', '#e5e7eb']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Investment Breakdown Chart
+            const investmentCtx = document.getElementById('investmentBreakdownChart').getContext('2d');
+            charts.investmentBreakdown = new Chart(investmentCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Land (24.4%)', 'Construction (28.4%)', 'Equipment (29.5%)', 'Operating (17.6%)'],
+                    datasets: [{
+                        data: [BUDGET_CONFIG.phases.land, BUDGET_CONFIG.phases.construction, 
+                               BUDGET_CONFIG.phases.equipment, BUDGET_CONFIG.phases.operating],
+                        backgroundColor: ['#1e3a8a', '#0284c7', '#10b981', '#f59e0b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+
+            // Cash Flow Chart
+            const cashflowCtx = document.getElementById('cashflowChart').getContext('2d');
+            charts.cashflow = new Chart(cashflowCtx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(processedData.monthlyData).map(month => {
+                        const [year, monthNum] = month.split('-');
+                        return new Date(year, monthNum - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                    }),
+                    datasets: [{
+                        label: 'Inflows',
+                        data: Object.values(processedData.monthlyData).map(d => d.inflows),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.3
+                    }, {
+                        label: 'Outflows',
+                        data: Object.values(processedData.monthlyData).map(d => d.outflows),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.3
+                    }, {
+                        label: 'Net Cash Flow',
+                        data: Object.values(processedData.monthlyData).map(d => d.net),
+                        borderColor: '#1e3a8a',
+                        backgroundColor: 'rgba(30, 58, 138, 0.1)',
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MAD ' + (value / 1000000).toFixed(1) + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Category Chart
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            charts.category = new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Land', 'Construction', 'Bank Fees', 'Other'],
+                    datasets: [{
+                        data: [processedData.categories.land, processedData.categories.construction, 
+                               processedData.categories['bank fees'], processedData.categories.other],
+                        backgroundColor: ['#1e3a8a', '#0284c7', '#f59e0b', '#8b5cf6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Vendor Chart
+            const vendorCtx = document.getElementById('vendorChart').getContext('2d');
+            charts.vendor = new Chart(vendorCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(processedData.vendors),
+                    datasets: [{
+                        label: 'Total Payments (MAD)',
+                        data: Object.values(processedData.vendors).map(v => v.total),
+                        backgroundColor: '#0284c7'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MAD ' + (value / 1000).toFixed(0) + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Financing Pie Chart
+            const financingPieCtx = document.getElementById('financingPieChart').getContext('2d');
+            charts.financingPie = new Chart(financingPieCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['KEF INVESTMENT'],
+                    datasets: [{
+                        data: [6480000],
+                        backgroundColor: ['#1e3a8a']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Loan Timeline Chart
+            const loanTimelineCtx = document.getElementById('loanTimelineChart').getContext('2d');
+            charts.loanTimeline = new Chart(loanTimelineCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mar 22', 'Jun 22', 'Sep 22', 'Dec 22', 'Mar 23', 'Jun 23', 'Sep 23', 'Dec 23', 'Mar 24', 'Jun 24'],
+                    datasets: [{
+                        label: 'Loan Injections',
+                        data: [648000, 648000, 648000, 648000, 648000, 648000, 648000, 648000, 648000, 648000],
+                        backgroundColor: '#0284c7'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MAD ' + (value / 1000).toFixed(0) + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Cost Category Chart
+            const costCategoryCtx = document.getElementById('costCategoryChart').getContext('2d');
+            charts.costCategory = new Chart(costCategoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Land', 'Construction', 'Bank Fees', 'Other'],
+                    datasets: [{
+                        data: [3870000, 2250000, 85000, 125000],
+                        backgroundColor: ['#1e3a8a', '#0284c7', '#f59e0b', '#8b5cf6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Monthly Spending Chart
+            const monthlySpendingCtx = document.getElementById('monthlySpendingChart').getContext('2d');
+            charts.monthlySpending = new Chart(monthlySpendingCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Monthly Spending',
+                        data: [550000, 580000, 620000, 585000, 590000, 600000, 575000, 585000, 595000, 580000, 585000, 590000],
+                        backgroundColor: '#ef4444'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MAD ' + (value / 1000).toFixed(0) + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Performance Trend Chart
+            const performanceTrendCtx = document.getElementById('performanceTrendChart').getContext('2d');
+            charts.performanceTrend = new Chart(performanceTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Q1 2022', 'Q2 2022', 'Q3 2022', 'Q4 2022', 'Q1 2023', 'Q2 2023', 'Q3 2023', 'Q4 2023', 'Q1 2024'],
+                    datasets: [{
+                        label: 'CPI',
+                        data: [1.0, 1.02, 0.98, 0.99, 1.01, 0.97, 0.98, 0.99, 0.98],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.3
+                    }, {
+                        label: 'SPI',
+                        data: [1.0, 0.98, 1.02, 1.01, 0.99, 1.03, 1.02, 1.01, 1.02],
+                        borderColor: '#0284c7',
+                        backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            min: 0.9,
+                            max: 1.1
+                        }
+                    }
+                }
+            });
+
+            // Budget Progress Chart
+            const budgetProgressCtx = document.getElementById('budgetProgressChart').getContext('2d');
+            charts.budgetProgress = new Chart(budgetProgressCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Land', 'Construction', 'Equipment', 'Bank Fees'],
+                    datasets: [{
+                        label: 'Budget',
+                        data: [3870000, 4500000, 4680000, 200000],
+                        backgroundColor: 'rgba(30, 58, 138, 0.5)'
+                    }, {
+                        label: 'Actual',
+                        data: [3870000, 2250000, 0, 85000],
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MAD ' + (value / 1000000).toFixed(1) + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Risk Matrix Chart
+            const riskMatrixCtx = document.getElementById('riskMatrixChart').getContext('2d');
+            charts.riskMatrix = new Chart(riskMatrixCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Risks',
+                        data: [
+                            {x: 2, y: 3}, // Cash Flow
+                            {x: 2, y: 3}, // Budget Overrun
+                            {x: 1, y: 2}, // Timeline Delay
+                            {x: 2, y: 2}, // Vendor Concentration
+                            {x: 1, y: 3}  // Financing Gap
+                        ],
+                        backgroundColor: function(context) {
+                            const index = context.dataIndex;
+                            const value = context.parsed;
+                            const score = value.x * value.y;
+                            return score >= 6 ? '#ef4444' : score >= 4 ? '#f59e0b' : '#10b981';
+                        },
+                        pointRadius: 15,
+                        pointHoverRadius: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Probability →'
+                            },
+                            min: 0,
+                            max: 4,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    const labels = ['', 'Low', 'Medium', 'High'];
+                                    return labels[value] || '';
+                                }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Impact →'
+                            },
+                            min: 0,
+                            max: 4,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    const labels = ['', 'Low', 'Medium', 'High'];
+                                    return labels[value] || '';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const risks = ['Cash Flow', 'Budget Overrun', 'Timeline Delay', 'Vendor Concentration', 'Financing Gap'];
+                                    return risks[context.dataIndex];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Projection Chart
+            const projectionCtx = document.getElementById('projectionChart').getContext('2d');
+            charts.projection = new Chart(projectionCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Projected Inflows',
+                        data: [648000, 0, 0, 648000, 0, 0, 648000, 0, 0, 648000, 0, 0],
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderColor: '#10b981',
+                        type: 'bar'
+                    }, {
+                        label: 'Projected Outflows',
+                        data: [585000, 585000, 585000, 585000, 585000, 585000, 585000, 585000, 585000, 585000, 585000, 585000],
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        borderColor: '#ef4444',
+                        type: 'bar'
+                    }, {
+                        label: 'Cumulative Net Position',
+                        data: [63000, -522000, -1107000, -1044000, -1629000, -2214000, -2151000, -2736000, -3321000, -3258000, -3843000, -4428000],
+                        borderColor: '#1e3a8a',
+                        backgroundColor: 'rgba(30, 58, 138, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MAD ' + (value / 1000).toFixed(0) + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update cashflow chart based on period
+        function updateCashflowChart() {
+            // This would filter data based on selected period
+            // For demo purposes, we'll just update the chart
+            charts.cashflow.update();
+        }
+
+        // Filter vendors
+        function filterVendors() {
+            // This would filter vendor data based on selection
+            // For demo purposes, we'll just update the chart
+            charts.vendor.update();
+        }
+    </script>
+</body>
+</html>
