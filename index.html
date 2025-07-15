@@ -1,0 +1,2406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Villa Bahia Financial Dashboard - Live Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #0284c7;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-gray: #1f2937;
+            --light-gray: #f3f4f6;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            padding: 30px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .sync-status {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sync-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .sync-indicator.error {
+            background-color: #ef4444;
+            animation: none;
+        }
+
+        .sync-indicator.loading {
+            background-color: #f59e0b;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Tab Navigation */
+        .tabs {
+            background-color: var(--white);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .tab-list {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--dark-gray);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background-color: var(--light-gray);
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Card Styles */
+        .card {
+            background-color: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+
+        /* Grid Layouts */
+        .grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .kpi-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .kpi-trend {
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .trend-up {
+            color: var(--success-color);
+        }
+
+        .trend-down {
+            color: var(--danger-color);
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover {
+            background-color: #f9fafb;
+        }
+
+        /* Progress Bars */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--success-color);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background-color: #1e40af;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        /* Select Dropdown */
+        select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background-color: var(--white);
+            cursor: pointer;
+        }
+
+        /* Alert Boxes */
+        .alert {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fbbf24;
+        }
+
+        .alert-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #f87171;
+        }
+
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #34d399;
+        }
+
+        .alert-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #60a5fa;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Data Source Info */
+        .data-source-info {
+            background-color: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.875rem;
+        }
+
+        .data-source-info strong {
+            color: var(--primary-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .tab-list {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            .tabs, .btn, select {
+                display: none;
+            }
+            
+            .card {
+                break-inside: avoid;
+            }
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h3>Loading Financial Data...</h3>
+            <p id="loadingMessage">Connecting to Google Sheets</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>Villa Bahia Financial Analysis Dashboard</h1>
+            <p class="header-subtitle">Construction Project Financial Tracking & Analysis (2022 - Present)</p>
+            <div class="sync-status">
+                <div class="sync-indicator" id="syncIndicator"></div>
+                <span id="syncStatus">Connecting to data source...</span>
+                <button class="btn btn-secondary" style="margin-left: 20px;" onclick="refreshData()">
+                    <span>🔄</span> Refresh Data
+                </button>
+                <button class="btn btn-secondary" style="margin-left: 10px;" onclick="exportData()">
+                    <span>📥</span> Export Data
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tabs">
+        <div class="tab-list">
+            <button class="tab-button active" onclick="showTab('executive', this)">Executive Summary</button>
+            <button class="tab-button" onclick="showTab('cashflow', this)">Cash Flow Analysis</button>
+            <button class="tab-button" onclick="showTab('vendors', this)">Vendor Analysis</button>
+            <button class="tab-button" onclick="showTab('financing', this)">Financing Structure</button>
+            <button class="tab-button" onclick="showTab('costs', this)">Cost Breakdown</button>
+            <button class="tab-button" onclick="showTab('kpis', this)">KPIs & Metrics</button>
+            <button class="tab-button" onclick="showTab('risk', this)">Risk Analysis</button>
+            <button class="tab-button" onclick="showTab('projections', this)">Projections</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Data Source Info -->
+        <div class="data-source-info" id="dataSourceInfo">
+            <strong>Data Source:</strong> <span id="dataSourceText">Connecting to Google Sheets API...</span>
+        </div>
+
+        <!-- Executive Summary Tab -->
+        <div id="executive" class="tab-content active">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Investment Planned</div>
+                    <div class="kpi-value">$1.76M</div>
+                    <div class="kpi-trend trend-up">MAD 15,840,000</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Investment Realized</div>
+                    <div class="kpi-value" id="investmentRealized">Loading...</div>
+                    <div class="kpi-trend" id="investmentProgress">Calculating...</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Monthly Burn Rate</div>
+                    <div class="kpi-value" id="burnRate">Loading...</div>
+                    <div class="kpi-trend" id="burnTrend">Calculating...</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Cash Runway</div>
+                    <div class="kpi-value" id="cashRunway">--</div>
+                    <div class="kpi-trend">Months Remaining</div>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Project Status Overview</h2>
+                    </div>
+                    <div class="alert alert-info" id="budgetAlert">
+                        <span>ℹ️</span>
+                        <span>Loading project status...</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="projectStatusChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Investment Breakdown</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="investmentBreakdownChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Executive Financial Summary</h2>
+                </div>
+                <div class="table-container">
+                    <table id="executiveSummaryTable">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Budget (MAD)</th>
+                                <th>Actual (MAD)</th>
+                                <th>Variance</th>
+                                <th>% Complete</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Land Acquisition</td>
+                                <td>3,870,000</td>
+                                <td id="landActual">Loading...</td>
+                                <td id="landVariance">--</td>
+                                <td id="landProgress">--</td>
+                                <td><span class="badge badge-warning" id="landStatus">Loading</span></td>
+                            </tr>
+                            <tr>
+                                <td>Construction</td>
+                                <td>4,500,000</td>
+                                <td id="constructionActual">Loading...</td>
+                                <td id="constructionVariance">--</td>
+                                <td id="constructionProgress">--</td>
+                                <td><span class="badge badge-warning" id="constructionStatus">Loading</span></td>
+                            </tr>
+                            <tr>
+                                <td>Bank Fees & Charges</td>
+                                <td>200,000</td>
+                                <td id="bankFeesActual">Loading...</td>
+                                <td id="bankFeesVariance">--</td>
+                                <td id="bankFeesProgress">--</td>
+                                <td><span class="badge badge-warning" id="bankFeesStatus">Loading</span></td>
+                            </tr>
+                            <tr>
+                                <td>Equipment & Finishing</td>
+                                <td>4,680,000</td>
+                                <td id="equipmentActual">0</td>
+                                <td id="equipmentVariance">0%</td>
+                                <td id="equipmentProgress">0%</td>
+                                <td><span class="badge badge-warning" id="equipmentStatus">Pending</span></td>
+                            </tr>
+                            <tr style="font-weight: bold; background-color: #f3f4f6;">
+                                <td>TOTAL</td>
+                                <td>15,840,000</td>
+                                <td id="totalActual">Loading...</td>
+                                <td id="totalVariance">--</td>
+                                <td id="totalProgress">--</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Key Insights -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Key Insights & Recommendations</h2>
+                </div>
+                <div id="keyInsights">
+                    <div class="alert alert-info">
+                        <span>ℹ️</span>
+                        <span>Analyzing financial data...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cash Flow Analysis Tab -->
+        <div id="cashflow" class="tab-content">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Inflows</div>
+                    <div class="kpi-value" id="totalInflows">Loading...</div>
+                    <div class="kpi-trend">All Sources</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Outflows</div>
+                    <div class="kpi-value" id="totalOutflows">Loading...</div>
+                    <div class="kpi-trend">All Expenses</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Net Cash Position</div>
+                    <div class="kpi-value" id="netCashPosition">Loading...</div>
+                    <div class="kpi-trend" id="cashTrend">Calculating...</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Working Capital</div>
+                    <div class="kpi-value" id="workingCapital">Loading...</div>
+                    <div class="kpi-trend">Current Assets - Liabilities</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Monthly Cash Flow Trend</h2>
+                    <select id="cashflowPeriod" onchange="updateCashflowChart()">
+                        <option value="all">All Time</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                        <option value="2022">2022</option>
+                    </select>
+                </div>
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="cashflowChart"></canvas>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Recent Transactions</h2>
+                    </div>
+                    <div class="table-container" style="max-height: 300px; overflow-y: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentTransactions">
+                                <tr>
+                                    <td colspan="4">Loading transactions...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Cash Flow Categories</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vendor Analysis Tab -->
+        <div id="vendors" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Top Contractors by Payment Volume</h2>
+                    <select id="vendorFilter" onchange="filterVendors()">
+                        <option value="all">All Categories</option>
+                        <option value="construction">Construction</option>
+                        <option value="fees">Bank Fees</option>
+                        <option value="loan">Loan Repayments</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="grid grid-2">
+                    <div class="chart-container">
+                        <canvas id="vendorChart"></canvas>
+                    </div>
+                    <div class="table-container">
+                        <table id="vendorTable">
+                            <thead>
+                                <tr>
+                                    <th>Contractor</th>
+                                    <th>Total Paid (MAD)</th>
+                                    <th>Payments</th>
+                                    <th>Category</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vendorTableBody">
+                                <tr>
+                                    <td colspan="4">Loading vendor data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Payment Distribution Analysis</h2>
+                </div>
+                <div class="grid grid-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Active Vendors</div>
+                        <div class="kpi-value" id="activeVendors">--</div>
+                        <div class="kpi-trend">Total Contractors</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Avg Transaction Size</div>
+                        <div class="kpi-value" id="avgTransaction">--</div>
+                        <div class="kpi-trend">Per Payment</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Payment Frequency</div>
+                        <div class="kpi-value" id="paymentFrequency">--</div>
+                        <div class="kpi-trend">Days Between Payments</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financing Structure Tab -->
+        <div id="financing" class="tab-content">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Loans Received</div>
+                    <div class="kpi-value" id="totalLoans">Loading...</div>
+                    <div class="kpi-trend">All Lenders</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Bank Fees Paid</div>
+                    <div class="kpi-value" id="totalBankFees">Loading...</div>
+                    <div class="kpi-trend" id="bankFeesRate">Transaction Costs</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Loan-to-Cost Ratio</div>
+                    <div class="kpi-value" id="ltcRatio">--</div>
+                    <div class="kpi-trend">Of Total Project</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Interest Rate</div>
+                    <div class="kpi-value" id="interestRate">2.5%</div>
+                    <div class="kpi-trend">Estimated Annual Rate</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Financing Sources Breakdown</h2>
+                </div>
+                <div class="grid grid-2">
+                    <div class="chart-container">
+                        <canvas id="financingPieChart"></canvas>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 15px;">Loan Details by Lender</h3>
+                        <div id="lenderDetails">
+                            <div class="alert alert-info">
+                                <span>ℹ️</span>
+                                <span>Loading lender information...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Loan Injection Timeline</h2>
+                </div>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="loanTimelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cost Breakdown Tab -->
+        <div id="costs" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Construction Cost Analysis</h2>
+                </div>
+                <div class="grid grid-4">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Cost per Suite</div>
+                        <div class="kpi-value" id="costPerSuite">--</div>
+                        <div class="kpi-trend">Total / 5 Suites</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Cost per m²</div>
+                        <div class="kpi-value" id="costPerSqm">--</div>
+                        <div class="kpi-trend">Construction Area</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Budget Utilization</div>
+                        <div class="kpi-value" id="budgetUtilization">--</div>
+                        <div class="kpi-trend">Of Total Budget</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Cost Overrun Risk</div>
+                        <div class="kpi-value" id="overrunRisk" style="color: #10b981;">--</div>
+                        <div class="kpi-trend">Based on Current Trend</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3 class="card-title">Cost by Category</h3>
+                        <div class="chart-container">
+                            <canvas id="costCategoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">Monthly Spending Trend</h3>
+                        <div class="chart-container">
+                            <canvas id="monthlySpendingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs & Metrics Tab -->
+        <div id="kpis" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Key Performance Indicators Dashboard</h2>
+                </div>
+                
+                <h3 style="margin: 20px 0;">Financial Health Metrics</h3>
+                <div class="grid grid-4">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Cost Performance Index</div>
+                        <div class="kpi-value" id="cpi">--</div>
+                        <div class="kpi-trend" id="cpiTrend">Calculating...</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Schedule Performance Index</div>
+                        <div class="kpi-value" id="spi">--</div>
+                        <div class="kpi-trend" id="spiTrend">Calculating...</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Cash Conversion Cycle</div>
+                        <div class="kpi-value" id="ccc">--</div>
+                        <div class="kpi-trend">Days</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Payment Velocity</div>
+                        <div class="kpi-value" id="paymentVelocity">--</div>
+                        <div class="kpi-trend">Days Between Payments</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 20px 0;">Operational Efficiency Metrics</h3>
+                <div class="grid grid-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Banking Fees %</div>
+                        <div class="kpi-value" id="bankingFeesPercent">--</div>
+                        <div class="kpi-trend">Of Total Costs</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Financing Efficiency</div>
+                        <div class="kpi-value" id="financingEfficiency">--</div>
+                        <div class="kpi-trend">Loans to Total Investment</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Cost Control Effectiveness</div>
+                        <div class="kpi-value" id="costControl">--</div>
+                        <div class="kpi-trend">Budget Adherence</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Performance Trends</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="performanceTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Budget vs Actual Progress</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="budgetProgressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Analysis Tab -->
+        <div id="risk" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Risk Assessment Matrix</h2>
+                </div>
+                
+                <div class="grid grid-2">
+                    <div>
+                        <h3>Critical Risks Identified</h3>
+                        <div id="riskAlerts">
+                            <div class="alert alert-info">
+                                <span>ℹ️</span>
+                                <span>Analyzing risk indicators...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="riskMatrixChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-3">
+                <div class="card">
+                    <h3 class="card-title">Cash Flow Risk</h3>
+                    <div class="kpi-value" style="text-align: center; margin: 20px 0;">
+                        <span id="cashflowRisk" style="font-size: 3rem;">--</span>
+                    </div>
+                    <p style="text-align: center;" id="cashflowRiskDesc">Analyzing...</p>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Budget Overrun Risk</h3>
+                    <div class="kpi-value" style="text-align: center; margin: 20px 0;">
+                        <span id="budgetRisk" style="font-size: 3rem;">--</span>
+                    </div>
+                    <p style="text-align: center;" id="budgetRiskDesc">Analyzing...</p>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Timeline Risk</h3>
+                    <div class="kpi-value" style="text-align: center; margin: 20px 0;">
+                        <span id="timelineRisk" style="font-size: 3rem;">--</span>
+                    </div>
+                    <p style="text-align: center;" id="timelineRiskDesc">Analyzing...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Risk Mitigation Recommendations</h2>
+                </div>
+                <div id="riskRecommendations">
+                    <div class="alert alert-info">
+                        <span>ℹ️</span>
+                        <span>Generating recommendations based on current data...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projections Tab -->
+        <div id="projections" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Financial Projections & Scenarios</h2>
+                </div>
+                
+                <div class="alert alert-info">
+                    <span>📊</span>
+                    <span>Projections based on current spending patterns and historical data</span>
+                </div>
+
+                <div class="grid grid-4">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Est. Completion Cost</div>
+                        <div class="kpi-value" id="estCompletionCost">--</div>
+                        <div class="kpi-trend">Based on Current Trend</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Additional Financing Need</div>
+                        <div class="kpi-value" id="additionalFinancing">--</div>
+                        <div class="kpi-trend">Gap Analysis</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Est. Completion Date</div>
+                        <div class="kpi-value" id="estCompletionDate">--</div>
+                        <div class="kpi-trend">Based on Progress</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">ROI Timeline</div>
+                        <div class="kpi-value" id="roiTimeline">--</div>
+                        <div class="kpi-trend">Months to Positive</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Cash Flow Projections (Next 12 Months)</h3>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="projectionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="card">
+                        <h3>Best Case Scenario</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="padding: 10px 0;">Completion Cost: <strong id="bestCaseCost">--</strong></li>
+                            <li style="padding: 10px 0;">Timeline: <strong id="bestCaseTime">--</strong></li>
+                            <li style="padding: 10px 0;">ROI Start: <strong id="bestCaseROI">--</strong></li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>Most Likely Scenario</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="padding: 10px 0;">Completion Cost: <strong id="likelyCaseCost">--</strong></li>
+                            <li style="padding: 10px 0;">Timeline: <strong id="likelyCaseTime">--</strong></li>
+                            <li style="padding: 10px 0;">ROI Start: <strong id="likelyCaseROI">--</strong></li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>Worst Case Scenario</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="padding: 10px 0;">Completion Cost: <strong id="worstCaseCost">--</strong></li>
+                            <li style="padding: 10px 0;">Timeline: <strong id="worstCaseTime">--</strong></li>
+                            <li style="padding: 10px 0;">ROI Start: <strong id="worstCaseROI">--</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let charts = {};
+        let rawData = null;
+        let processedData = {
+            totalInflows: 0,
+            totalOutflows: 0,
+            monthlyData: {},
+            vendors: {},
+            loans: {},
+            categories: {},
+            transactions: []
+        };
+
+        // MAD to USD conversion rate
+        const MAD_TO_USD = 1 / 9;
+
+        // Budget configuration
+        const BUDGET_CONFIG = {
+            totalPlanned: 15840000,
+            phases: {
+                land: 3870000,
+                construction: 4500000,
+                equipment: 4680000,
+                operating: 2790000
+            }
+        };
+
+        // API configuration
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwK0PKXuYWysEm0wm4SeKsSpRV92wJDcYXef6NnjtRO_1pIkvZYoVHYnzU5EnyeRcSq/exec';
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeCharts();
+            loadDataFromAPI();
+        });
+
+        // Load data from Google Sheets API
+        async function loadDataFromAPI() {
+            const syncStatus = document.getElementById('syncStatus');
+            const syncIndicator = document.getElementById('syncIndicator');
+            const dataSourceText = document.getElementById('dataSourceText');
+            
+            // Show loading state
+            syncStatus.textContent = 'Fetching data from Google Sheets...';
+            syncIndicator.className = 'sync-indicator loading';
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            try {
+                // Fetch data from API
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Store raw data
+                rawData = data;
+                
+                // Process the data
+                processAPIData(data);
+                
+                // Update displays
+                updateAllDisplays();
+                
+                // Update status
+                syncStatus.textContent = 'Data loaded successfully';
+                syncIndicator.className = 'sync-indicator';
+                dataSourceText.textContent = `Live data from Google Sheets (${data.transactions?.length || 0} transactions)`;
+                
+                // Hide loading overlay
+                document.getElementById('loadingOverlay').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                
+                // Update status to error
+                syncStatus.textContent = 'Error loading data';
+                syncIndicator.className = 'sync-indicator error';
+                dataSourceText.textContent = 'Failed to load data from Google Sheets';
+                
+                // Show error alert
+                document.getElementById('budgetAlert').innerHTML = `
+                    <span>❌</span>
+                    <span>Error loading data: ${error.message}</span>
+                `;
+                document.getElementById('budgetAlert').className = 'alert alert-danger';
+                
+                // Hide loading overlay
+                document.getElementById('loadingOverlay').style.display = 'none';
+                
+                // Load sample data as fallback
+                loadSampleData();
+            }
+        }
+
+        // Process API data
+        function processAPIData(apiData) {
+            // Reset processed data
+            processedData = {
+                totalInflows: apiData.summary?.totalInflows || 0,
+                totalOutflows: apiData.summary?.totalOutflows || 0,
+                totalLoans: apiData.summary?.totalLoans || 0,
+                constructionSpending: apiData.summary?.constructionSpending || 0,
+                bankFees: apiData.summary?.bankFees || 0,
+                monthlyData: {},
+                vendors: {},
+                loans: {},
+                categories: {},
+                transactions: apiData.transactions || []
+            };
+            
+            // Process transactions
+            processedData.transactions.forEach(tx => {
+                // Process monthly data
+                const monthKey = tx.date ? tx.date.substring(0, 7) : 'Unknown';
+                if (!processedData.monthlyData[monthKey]) {
+                    processedData.monthlyData[monthKey] = {
+                        inflows: 0,
+                        outflows: 0,
+                        net: 0
+                    };
+                }
+                
+                if (tx.debit > 0) {
+                    processedData.monthlyData[monthKey].inflows += tx.debit;
+                }
+                if (tx.credit > 0) {
+                    processedData.monthlyData[monthKey].outflows += tx.credit;
+                }
+                
+                // Process vendor data
+                if (tx.credit > 0 && tx.description) {
+                    if (!processedData.vendors[tx.description]) {
+                        processedData.vendors[tx.description] = {
+                            total: 0,
+                            count: 0,
+                            category: tx.category || 'Other'
+                        };
+                    }
+                    processedData.vendors[tx.description].total += tx.credit;
+                    processedData.vendors[tx.description].count++;
+                }
+                
+                // Process category data
+                const category = tx.category || 'Other';
+                if (!processedData.categories[category]) {
+                    processedData.categories[category] = 0;
+                }
+                if (tx.credit > 0) {
+                    processedData.categories[category] += tx.credit;
+                }
+                
+                // Process loan data
+                if (tx.debit > 0 && tx.category && tx.category.toLowerCase().includes('prêt')) {
+                    const lender = tx.description || 'Unknown Lender';
+                    if (!processedData.loans[lender]) {
+                        processedData.loans[lender] = {
+                            total: 0,
+                            count: 0,
+                            dates: []
+                        };
+                    }
+                    processedData.loans[lender].total += tx.debit;
+                    processedData.loans[lender].count++;
+                    processedData.loans[lender].dates.push(tx.date);
+                }
+            });
+            
+            // Calculate net positions for monthly data
+            Object.keys(processedData.monthlyData).forEach(month => {
+                processedData.monthlyData[month].net = 
+                    processedData.monthlyData[month].inflows - 
+                    processedData.monthlyData[month].outflows;
+            });
+            
+            // Add estimated land cost if not in transactions
+            const hasLandTransaction = processedData.categories['Land'] || 
+                                     processedData.categories['Terrain'] || 
+                                     processedData.categories['Acquisition'];
+            
+            if (!hasLandTransaction) {
+                processedData.categories['Land Acquisition'] = BUDGET_CONFIG.phases.land;
+            }
+        }
+
+        // Update all displays
+        function updateAllDisplays() {
+            updateKPIs();
+            updateCharts();
+            updateTables();
+            updateInsights();
+            updateRiskAnalysis();
+            updateProjections();
+        }
+
+        // Update KPIs
+        function updateKPIs() {
+            // Executive Summary KPIs
+            const totalInvestmentRealized = processedData.totalOutflows;
+            const avgMonthlySpending = calculateAverageMonthlySpending();
+            const cashRunway = Math.floor((BUDGET_CONFIG.totalPlanned - totalInvestmentRealized) / avgMonthlySpending);
+            
+            document.getElementById('investmentRealized').textContent = 
+                `$${(totalInvestmentRealized * MAD_TO_USD / 1000).toFixed(0)}K`;
+            document.getElementById('investmentProgress').textContent = 
+                `${((totalInvestmentRealized / BUDGET_CONFIG.totalPlanned) * 100).toFixed(1)}% Complete`;
+            document.getElementById('burnRate').textContent = 
+                `$${(avgMonthlySpending * MAD_TO_USD / 1000).toFixed(0)}K`;
+            document.getElementById('burnTrend').textContent = 
+                `MAD ${(avgMonthlySpending / 1000).toFixed(0)}K/month`;
+            document.getElementById('cashRunway').textContent = cashRunway > 0 ? cashRunway : 'N/A';
+            
+            // Cash Flow KPIs
+            document.getElementById('totalInflows').textContent = 
+                `$${(processedData.totalInflows * MAD_TO_USD / 1000).toFixed(0)}K`;
+            document.getElementById('totalOutflows').textContent = 
+                `$${(processedData.totalOutflows * MAD_TO_USD / 1000).toFixed(0)}K`;
+            const netPosition = processedData.totalInflows - processedData.totalOutflows;
+            document.getElementById('netCashPosition').textContent = 
+                `$${(netPosition * MAD_TO_USD / 1000).toFixed(0)}K`;
+            document.getElementById('cashTrend').textContent = 
+                netPosition >= 0 ? 'Positive' : 'Negative';
+            document.getElementById('workingCapital').textContent = 
+                `$${(Math.abs(netPosition) * MAD_TO_USD / 1000).toFixed(0)}K`;
+            
+            // Financing KPIs
+            document.getElementById('totalLoans').textContent = 
+                `$${(processedData.totalLoans * MAD_TO_USD / 1000).toFixed(0)}K`;
+            document.getElementById('totalBankFees').textContent = 
+                `$${(processedData.bankFees * MAD_TO_USD / 1000).toFixed(1)}K`;
+            document.getElementById('ltcRatio').textContent = 
+                `${((processedData.totalLoans / BUDGET_CONFIG.totalPlanned) * 100).toFixed(1)}%`;
+            
+            // Cost Analysis KPIs
+            document.getElementById('costPerSuite').textContent = 
+                `$${(totalInvestmentRealized * MAD_TO_USD / 5 / 1000).toFixed(0)}K`;
+            document.getElementById('costPerSqm').textContent = 
+                `$${(totalInvestmentRealized * MAD_TO_USD / 3500).toFixed(0)}`;
+            document.getElementById('budgetUtilization').textContent = 
+                `${((totalInvestmentRealized / BUDGET_CONFIG.totalPlanned) * 100).toFixed(1)}%`;
+            
+            // Performance Metrics
+            const cpi = calculateCPI();
+            const spi = calculateSPI();
+            document.getElementById('cpi').textContent = cpi.toFixed(2);
+            document.getElementById('cpiTrend').textContent = cpi >= 1 ? '✓ Under Budget' : '⚠️ Over Budget';
+            document.getElementById('spi').textContent = spi.toFixed(2);
+            document.getElementById('spiTrend').textContent = spi >= 1 ? '✓ On Schedule' : '⚠️ Behind Schedule';
+            
+            // Efficiency Metrics
+            const bankingFeesPercent = (processedData.bankFees / processedData.totalOutflows * 100).toFixed(2);
+            document.getElementById('bankingFeesPercent').textContent = `${bankingFeesPercent}%`;
+            document.getElementById('financingEfficiency').textContent = 
+                `${((processedData.totalLoans / processedData.totalOutflows) * 100).toFixed(1)}%`;
+        }
+
+        // Calculate average monthly spending
+        function calculateAverageMonthlySpending() {
+            const monthlyData = Object.values(processedData.monthlyData);
+            if (monthlyData.length === 0) return 585000; // Default
+            
+            const totalSpending = monthlyData.reduce((sum, month) => sum + month.outflows, 0);
+            return totalSpending / monthlyData.length;
+        }
+
+        // Calculate Cost Performance Index
+        function calculateCPI() {
+            const budgetedValue = (processedData.totalOutflows / BUDGET_CONFIG.totalPlanned) * BUDGET_CONFIG.totalPlanned;
+            return budgetedValue / processedData.totalOutflows;
+        }
+
+        // Calculate Schedule Performance Index
+        function calculateSPI() {
+            // Assuming 36-month project timeline
+            const monthsElapsed = Object.keys(processedData.monthlyData).length;
+            const expectedProgress = monthsElapsed / 36;
+            const actualProgress = processedData.totalOutflows / BUDGET_CONFIG.totalPlanned;
+            return actualProgress / expectedProgress;
+        }
+
+        // Update tables
+        function updateTables() {
+            // Executive Summary Table
+            const landActual = processedData.categories['Land Acquisition'] || BUDGET_CONFIG.phases.land;
+            const constructionActual = processedData.constructionSpending;
+            const bankFeesActual = processedData.bankFees;
+            const equipmentActual = 0; // Not started yet
+            const totalActual = landActual + constructionActual + bankFeesActual + equipmentActual;
+            
+            document.getElementById('landActual').textContent = landActual.toLocaleString();
+            document.getElementById('landVariance').textContent = '0%';
+            document.getElementById('landProgress').textContent = '100%';
+            document.getElementById('landStatus').textContent = 'Complete';
+            document.getElementById('landStatus').className = 'badge badge-success';
+            
+            document.getElementById('constructionActual').textContent = constructionActual.toLocaleString();
+            const constructionVariance = ((constructionActual - (BUDGET_CONFIG.phases.construction * 0.5)) / (BUDGET_CONFIG.phases.construction * 0.5) * 100).toFixed(1);
+            document.getElementById('constructionVariance').textContent = `${constructionVariance > 0 ? '+' : ''}${constructionVariance}%`;
+            document.getElementById('constructionProgress').textContent = `${(constructionActual / BUDGET_CONFIG.phases.construction * 100).toFixed(1)}%`;
+            document.getElementById('constructionStatus').textContent = 'In Progress';
+            document.getElementById('constructionStatus').className = 'badge badge-warning';
+            
+            document.getElementById('bankFeesActual').textContent = bankFeesActual.toLocaleString();
+            document.getElementById('bankFeesVariance').textContent = `${((bankFeesActual / 200000 - 1) * 100).toFixed(1)}%`;
+            document.getElementById('bankFeesProgress').textContent = `${(bankFeesActual / 200000 * 100).toFixed(1)}%`;
+            document.getElementById('bankFeesStatus').textContent = 'Ongoing';
+            document.getElementById('bankFeesStatus').className = 'badge badge-success';
+            
+            document.getElementById('totalActual').textContent = totalActual.toLocaleString();
+            document.getElementById('totalVariance').textContent = `${((totalActual / BUDGET_CONFIG.totalPlanned - 0.495) * 100).toFixed(1)}%`;
+            document.getElementById('totalProgress').textContent = `${(totalActual / BUDGET_CONFIG.totalPlanned * 100).toFixed(1)}%`;
+            
+            // Recent Transactions Table
+            const recentTx = processedData.transactions.slice(-10).reverse();
+            const recentTransactionsHtml = recentTx.map(tx => `
+                <tr>
+                    <td>${tx.date}</td>
+                    <td>${tx.description}</td>
+                    <td>MAD ${(tx.debit || tx.credit).toLocaleString()}</td>
+                    <td><span style="color: ${tx.debit > 0 ? '#10b981' : '#ef4444'};">${tx.debit > 0 ? 'Inflow' : 'Outflow'}</span></td>
+                </tr>
+            `).join('');
+            document.getElementById('recentTransactions').innerHTML = recentTransactionsHtml || '<tr><td colspan="4">No recent transactions</td></tr>';
+            
+            // Vendor Table
+            const topVendors = Object.entries(processedData.vendors)
+                .sort((a, b) => b[1].total - a[1].total)
+                .slice(0, 10);
+            const vendorTableHtml = topVendors.map(([name, data]) => `
+                <tr>
+                    <td>${name}</td>
+                    <td>${data.total.toLocaleString()}</td>
+                    <td>${data.count}</td>
+                    <td>${data.category}</td>
+                </tr>
+            `).join('');
+            document.getElementById('vendorTableBody').innerHTML = vendorTableHtml || '<tr><td colspan="4">No vendor data available</td></tr>';
+            
+            // Update vendor metrics
+            document.getElementById('activeVendors').textContent = Object.keys(processedData.vendors).length;
+            const avgTransactionSize = processedData.totalOutflows / processedData.transactions.filter(tx => tx.credit > 0).length;
+            document.getElementById('avgTransaction').textContent = `$${(avgTransactionSize * MAD_TO_USD / 1000).toFixed(1)}K`;
+        }
+
+        // Update insights
+        function updateInsights() {
+            const insights = [];
+            
+            // Project progress insight
+            const progress = (processedData.totalOutflows / BUDGET_CONFIG.totalPlanned * 100).toFixed(1);
+            insights.push({
+                type: 'info',
+                title: 'Project Progress',
+                text: `Project is ${progress}% complete based on spending analysis. ${progress < 50 ? 'Early-stage' : progress < 75 ? 'Mid-stage' : 'Late-stage'} development phase.`
+            });
+            
+            // Spending pattern insight
+            const avgMonthly = calculateAverageMonthlySpending();
+            const monthsRemaining = Math.ceil((BUDGET_CONFIG.totalPlanned - processedData.totalOutflows) / avgMonthly);
+            insights.push({
+                type: 'info',
+                title: 'Spending Pattern',
+                text: `Average monthly burn rate is MAD ${(avgMonthly / 1000).toFixed(0)}K. At this rate, project completion expected in ${monthsRemaining} months.`
+            });
+            
+            // Financing status
+            const loanPercentage = (processedData.totalLoans / processedData.totalOutflows * 100).toFixed(0);
+            insights.push({
+                type: 'success',
+                title: 'Financing Status',
+                text: `${loanPercentage}% of expenses covered by loans. ${loanPercentage > 70 ? 'Strong' : 'Moderate'} external financing secured.`
+            });
+            
+            // Banking efficiency
+            const bankFeesPercent = (processedData.bankFees / processedData.totalOutflows * 100).toFixed(2);
+            insights.push({
+                type: bankFeesPercent < 2 ? 'success' : 'warning',
+                title: 'Banking Efficiency',
+                text: `Bank fees represent ${bankFeesPercent}% of total costs. ${bankFeesPercent < 2 ? 'Excellent' : 'Good'} cost management.`
+            });
+            
+            // Budget status
+            const budgetStatus = processedData.totalOutflows <= BUDGET_CONFIG.totalPlanned * 0.5 ? 'on track' : 'needs monitoring';
+            insights.push({
+                type: budgetStatus === 'on track' ? 'success' : 'warning',
+                title: 'Budget Status',
+                text: `Project spending is ${budgetStatus}. Current utilization at ${progress}% of total budget.`
+            });
+            
+            // Generate HTML for insights
+            const insightsHtml = insights.map(insight => `
+                <div class="alert alert-${insight.type}" style="margin-bottom: 15px;">
+                    <h4 style="margin: 0 0 5px 0; font-size: 1.1rem;">${insight.title}</h4>
+                    <p style="margin: 0;">${insight.text}</p>
+                </div>
+            `).join('');
+            
+            document.getElementById('keyInsights').innerHTML = insightsHtml;
+        }
+
+        // Update risk analysis
+        function updateRiskAnalysis() {
+            // Cash flow risk
+            const netPosition = processedData.totalInflows - processedData.totalOutflows;
+            const cashflowRiskLevel = netPosition < -1000000 ? 'High' : netPosition < -500000 ? 'Medium' : 'Low';
+            const cashflowRiskColor = cashflowRiskLevel === 'High' ? '#ef4444' : cashflowRiskLevel === 'Medium' ? '#f59e0b' : '#10b981';
+            
+            document.getElementById('cashflowRisk').textContent = cashflowRiskLevel;
+            document.getElementById('cashflowRisk').style.color = cashflowRiskColor;
+            document.getElementById('cashflowRiskDesc').textContent = 
+                cashflowRiskLevel === 'Low' ? 'Adequate funding available' : 
+                cashflowRiskLevel === 'Medium' ? 'Monitor cash position' : 
+                'Immediate funding needed';
+            
+            // Budget overrun risk
+            const spendingRate = processedData.totalOutflows / BUDGET_CONFIG.totalPlanned;
+            const budgetRiskLevel = spendingRate > 0.6 ? 'Medium' : 'Low';
+            const budgetRiskColor = budgetRiskLevel === 'High' ? '#ef4444' : budgetRiskLevel === 'Medium' ? '#f59e0b' : '#10b981';
+            
+            document.getElementById('budgetRisk').textContent = budgetRiskLevel;
+            document.getElementById('budgetRisk').style.color = budgetRiskColor;
+            document.getElementById('budgetRiskDesc').textContent = 
+                budgetRiskLevel === 'Low' ? 'Within budget parameters' : 'Close monitoring required';
+            
+            // Timeline risk
+            const monthsElapsed = Object.keys(processedData.monthlyData).length;
+            const expectedMonths = 36;
+            const scheduleVariance = (monthsElapsed / expectedMonths) - spendingRate;
+            const timelineRiskLevel = Math.abs(scheduleVariance) > 0.2 ? 'Medium' : 'Low';
+            const timelineRiskColor = timelineRiskLevel === 'High' ? '#ef4444' : timelineRiskLevel === 'Medium' ? '#f59e0b' : '#10b981';
+            
+            document.getElementById('timelineRisk').textContent = timelineRiskLevel;
+            document.getElementById('timelineRisk').style.color = timelineRiskColor;
+            document.getElementById('timelineRiskDesc').textContent = 
+                timelineRiskLevel === 'Low' ? 'On schedule' : 'Schedule adjustment needed';
+            
+            // Update risk alerts
+            const riskAlerts = [];
+            if (cashflowRiskLevel !== 'Low') {
+                riskAlerts.push({
+                    type: cashflowRiskLevel === 'High' ? 'danger' : 'warning',
+                    text: `Cash flow risk is ${cashflowRiskLevel}. Additional financing may be required.`
+                });
+            }
+            if (budgetRiskLevel !== 'Low') {
+                riskAlerts.push({
+                    type: 'warning',
+                    text: 'Budget utilization approaching threshold. Review spending patterns.'
+                });
+            }
+            
+            if (riskAlerts.length === 0) {
+                riskAlerts.push({
+                    type: 'success',
+                    text: 'All risk indicators within acceptable ranges.'
+                });
+            }
+            
+            const riskAlertsHtml = riskAlerts.map(alert => `
+                <div class="alert alert-${alert.type}">
+                    <span>${alert.type === 'success' ? '✓' : alert.type === 'danger' ? '❌' : '⚠️'}</span>
+                    <span>${alert.text}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('riskAlerts').innerHTML = riskAlertsHtml;
+            
+            // Update recommendations
+            const recommendations = [];
+            if (cashflowRiskLevel !== 'Low') {
+                recommendations.push('Secure additional financing or adjust payment schedules');
+            }
+            if (budgetRiskLevel !== 'Low') {
+                recommendations.push('Review and optimize construction costs');
+            }
+            recommendations.push('Maintain current vendor payment schedules');
+            recommendations.push('Continue monitoring bank fees and transaction costs');
+            
+            const recommendationsHtml = recommendations.map(rec => `
+                <div class="alert alert-info" style="margin-bottom: 10px;">
+                    <span>💡</span>
+                    <span>${rec}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('riskRecommendations').innerHTML = recommendationsHtml;
+        }
+
+        // Update projections
+        function updateProjections() {
+            const avgMonthlySpending = calculateAverageMonthlySpending();
+            const remainingBudget = BUDGET_CONFIG.totalPlanned - processedData.totalOutflows;
+            const monthsToComplete = Math.ceil(remainingBudget / avgMonthlySpending);
+            
+            // Estimated completion cost
+            const estimatedTotal = processedData.totalOutflows + (avgMonthlySpending * monthsToComplete);
+            document.getElementById('estCompletionCost').textContent = 
+                `$${(estimatedTotal * MAD_TO_USD / 1000000).toFixed(2)}M`;
+            
+            // Additional financing need
+            const financingGap = estimatedTotal - processedData.totalInflows - (processedData.totalLoans * 0.2); // Assuming 20% more loans
+            document.getElementById('additionalFinancing').textContent = 
+                financingGap > 0 ? `$${(financingGap * MAD_TO_USD / 1000).toFixed(0)}K` : 'None';
+            
+            // Completion date
+            const today = new Date();
+            const completionDate = new Date(today.setMonth(today.getMonth() + monthsToComplete));
+            document.getElementById('estCompletionDate').textContent = 
+                completionDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            
+            // ROI timeline
+            const roiMonths = monthsToComplete + 6; // Assuming 6 months after completion
+            document.getElementById('roiTimeline').textContent = roiMonths;
+            
+            // Scenarios
+            // Best case - 20% faster, 10% under budget
+            document.getElementById('bestCaseCost').textContent = 
+                `$${(estimatedTotal * 0.9 * MAD_TO_USD / 1000000).toFixed(2)}M`;
+            document.getElementById('bestCaseTime').textContent = 
+                `${Math.ceil(monthsToComplete * 0.8)} months`;
+            const bestCaseDate = new Date();
+            bestCaseDate.setMonth(bestCaseDate.getMonth() + Math.ceil(monthsToComplete * 0.8));
+            document.getElementById('bestCaseROI').textContent = 
+                bestCaseDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            
+            // Most likely
+            document.getElementById('likelyCaseCost').textContent = 
+                `$${(estimatedTotal * MAD_TO_USD / 1000000).toFixed(2)}M`;
+            document.getElementById('likelyCaseTime').textContent = 
+                `${monthsToComplete} months`;
+            document.getElementById('likelyCaseROI').textContent = 
+                completionDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            
+            // Worst case - 50% slower, 30% over budget
+            document.getElementById('worstCaseCost').textContent = 
+                `$${(estimatedTotal * 1.3 * MAD_TO_USD / 1000000).toFixed(2)}M`;
+            document.getElementById('worstCaseTime').textContent = 
+                `${Math.ceil(monthsToComplete * 1.5)} months`;
+            const worstCaseDate = new Date();
+            worstCaseDate.setMonth(worstCaseDate.getMonth() + Math.ceil(monthsToComplete * 1.5));
+            document.getElementById('worstCaseROI').textContent = 
+                worstCaseDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        }
+
+        // Initialize all charts
+        function initializeCharts() {
+            // Configure Chart.js defaults
+            Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            
+            // Initialize empty chart configurations
+            initializeProjectStatusChart();
+            initializeInvestmentBreakdownChart();
+            initializeCashflowChart();
+            initializeCategoryChart();
+            initializeVendorChart();
+            initializeFinancingCharts();
+            initializeCostCharts();
+            initializePerformanceCharts();
+            initializeRiskChart();
+            initializeProjectionChart();
+        }
+
+        // Initialize individual charts
+        function initializeProjectStatusChart() {
+            const ctx = document.getElementById('projectStatusChart').getContext('2d');
+            charts.projectStatus = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Land', 'Construction', 'Bank Fees', 'Remaining'],
+                    datasets: [{
+                        data: [24.4, 14.2, 0.5, 60.9],
+                        backgroundColor: ['#1e3a8a', '#0284c7', '#f59e0b', '#e5e7eb']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeInvestmentBreakdownChart() {
+            const ctx = document.getElementById('investmentBreakdownChart').getContext('2d');
+            charts.investmentBreakdown = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Land (24.4%)', 'Construction (28.4%)', 'Equipment (29.5%)', 'Operating (17.6%)'],
+                    datasets: [{
+                        data: [BUDGET_CONFIG.phases.land, BUDGET_CONFIG.phases.construction, 
+                               BUDGET_CONFIG.phases.equipment, BUDGET_CONFIG.phases.operating],
+                        backgroundColor: ['#1e3a8a', '#0284c7', '#10b981', '#f59e0b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeCashflowChart() {
+            const ctx = document.getElementById('cashflowChart').getContext('2d');
+            charts.cashflow = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Inflows',
+                        data: [],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.3
+                    }, {
+                        label: 'Outflows',
+                        data: [],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.3
+                    }, {
+                        label: 'Net Cash Flow',
+                        data: [],
+                        borderColor: '#1e3a8a',
+                        backgroundColor: 'rgba(30, 58, 138, 0.1)',
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MAD ' + (value / 1000000).toFixed(1) + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeCategoryChart() {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            charts.category = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: ['#1e3a8a', '#0284c7', '#f59e0b', '#8b5cf6', '#10b981', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeVendorChart() {
+            const ctx = document.getElementById('vendorChart').getContext('2d');
+            charts.vendor = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Total Payments (MAD)',
+                        data: [],
+                        backgroundColor: '#0284c7'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MAD ' + (value / 1000).toFixed(0) + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeFinancingCharts() {
+            // Financing Pie Chart
+            const financingPieCtx = document.getElementById('financingPieChart').getContext('2d');
+            charts.financingPie = new Chart(financingPieCtx, {
+                type: 'pie',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: ['#1e3a8a', '#0284c7', '#10b981']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Loan Timeline Chart
+            const loanTimelineCtx = document.getElementById('loanTimelineChart').getContext('2d');
+            charts.loanTimeline = new Chart(loanTimelineCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Loan Injections',
+                        data: [],
+                        backgroundColor: '#0284c7'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MAD ' + (value / 1000).toFixed(0) + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeCostCharts() {
+            // Cost Category Chart
+            const costCategoryCtx = document.getElementById('costCategoryChart').getContext('2d');
+            charts.costCategory = new Chart(costCategoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: ['#1e3a8a', '#0284c7', '#f59e0b', '#8b5cf6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Monthly Spending Chart
+            const monthlySpendingCtx = document.getElementById('monthlySpendingChart').getContext('2d');
+            charts.monthlySpending = new Chart(monthlySpendingCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Monthly Spending',
+                        data: [],
+                        backgroundColor: '#ef4444'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MAD ' + (value / 1000).toFixed(0) + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializePerformanceCharts() {
+            // Performance Trend Chart
+            const performanceTrendCtx = document.getElementById('performanceTrendChart').getContext('2d');
+            charts.performanceTrend = new Chart(performanceTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'CPI',
+                        data: [],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.3
+                    }, {
+                        label: 'SPI',
+                        data: [],
+                        borderColor: '#0284c7',
+                        backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            min: 0.5,
+                            max: 1.5
+                        }
+                    }
+                }
+            });
+
+            // Budget Progress Chart
+            const budgetProgressCtx = document.getElementById('budgetProgressChart').getContext('2d');
+            charts.budgetProgress = new Chart(budgetProgressCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Land', 'Construction', 'Equipment', 'Bank Fees'],
+                    datasets: [{
+                        label: 'Budget',
+                        data: [3870000, 4500000, 4680000, 200000],
+                        backgroundColor: 'rgba(30, 58, 138, 0.5)'
+                    }, {
+                        label: 'Actual',
+                        data: [3870000, 0, 0, 0],
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MAD ' + (value / 1000000).toFixed(1) + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeRiskChart() {
+            const riskMatrixCtx = document.getElementById('riskMatrixChart').getContext('2d');
+            charts.riskMatrix = new Chart(riskMatrixCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Risks',
+                        data: [
+                            {x: 2, y: 3}, // Cash Flow
+                            {x: 2, y: 3}, // Budget Overrun
+                            {x: 1, y: 2}, // Timeline Delay
+                            {x: 2, y: 2}, // Vendor Concentration
+                            {x: 1, y: 3}  // Financing Gap
+                        ],
+                        backgroundColor: function(context) {
+                            const index = context.dataIndex;
+                            const value = context.parsed;
+                            const score = value.x * value.y;
+                            return score >= 6 ? '#ef4444' : score >= 4 ? '#f59e0b' : '#10b981';
+                        },
+                        pointRadius: 15,
+                        pointHoverRadius: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Probability →'
+                            },
+                            min: 0,
+                            max: 4,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    const labels = ['', 'Low', 'Medium', 'High'];
+                                    return labels[value] || '';
+                                }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Impact →'
+                            },
+                            min: 0,
+                            max: 4,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    const labels = ['', 'Low', 'Medium', 'High'];
+                                    return labels[value] || '';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const risks = ['Cash Flow', 'Budget Overrun', 'Timeline Delay', 'Vendor Concentration', 'Financing Gap'];
+                                    return risks[context.dataIndex];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeProjectionChart() {
+            const projectionCtx = document.getElementById('projectionChart').getContext('2d');
+            charts.projection = new Chart(projectionCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Projected Inflows',
+                        data: [],
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderColor: '#10b981',
+                        type: 'bar'
+                    }, {
+                        label: 'Projected Outflows',
+                        data: [],
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        borderColor: '#ef4444',
+                        type: 'bar'
+                    }, {
+                        label: 'Cumulative Net Position',
+                        data: [],
+                        borderColor: '#1e3a8a',
+                        backgroundColor: 'rgba(30, 58, 138, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'MAD ' + (value / 1000).toFixed(0) + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update charts with real data
+        function updateCharts() {
+            // Update Project Status Chart
+            const landActual = processedData.categories['Land Acquisition'] || BUDGET_CONFIG.phases.land;
+            const totalActual = processedData.totalOutflows;
+            const remaining = BUDGET_CONFIG.totalPlanned - totalActual;
+            
+            charts.projectStatus.data.datasets[0].data = [
+                (landActual / BUDGET_CONFIG.totalPlanned * 100).toFixed(1),
+                (processedData.constructionSpending / BUDGET_CONFIG.totalPlanned * 100).toFixed(1),
+                (processedData.bankFees / BUDGET_CONFIG.totalPlanned * 100).toFixed(1),
+                (remaining / BUDGET_CONFIG.totalPlanned * 100).toFixed(1)
+            ];
+            charts.projectStatus.update();
+            
+            // Update Cash Flow Chart
+            const sortedMonths = Object.keys(processedData.monthlyData).sort();
+            charts.cashflow.data.labels = sortedMonths.map(month => {
+                const [year, monthNum] = month.split('-');
+                return new Date(year, monthNum - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            });
+            charts.cashflow.data.datasets[0].data = sortedMonths.map(m => processedData.monthlyData[m].inflows);
+            charts.cashflow.data.datasets[1].data = sortedMonths.map(m => processedData.monthlyData[m].outflows);
+            charts.cashflow.data.datasets[2].data = sortedMonths.map(m => processedData.monthlyData[m].net);
+            charts.cashflow.update();
+            
+            // Update Category Chart
+            const categories = Object.entries(processedData.categories)
+                .filter(([_, amount]) => amount > 0)
+                .sort((a, b) => b[1] - a[1]);
+            
+            charts.category.data.labels = categories.map(([cat, _]) => cat);
+            charts.category.data.datasets[0].data = categories.map(([_, amount]) => amount);
+            charts.category.update();
+            
+            // Update Vendor Chart
+            const topVendors = Object.entries(processedData.vendors)
+                .sort((a, b) => b[1].total - a[1].total)
+                .slice(0, 5);
+            
+            charts.vendor.data.labels = topVendors.map(([name, _]) => name);
+            charts.vendor.data.datasets[0].data = topVendors.map(([_, data]) => data.total);
+            charts.vendor.update();
+            
+            // Update Financing Charts
+            const lenders = Object.entries(processedData.loans);
+            charts.financingPie.data.labels = lenders.map(([name, _]) => name);
+            charts.financingPie.data.datasets[0].data = lenders.map(([_, data]) => data.total);
+            charts.financingPie.update();
+            
+            // Update loan details display
+            const lenderDetailsHtml = lenders.map(([name, data]) => `
+                <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                    <h4 style="margin: 0 0 10px 0; color: #1e3a8a;">${name}</h4>
+                    <table style="width: 100%; font-size: 0.9rem;">
+                        <tr>
+                            <td>Total Loans:</td>
+                            <td style="text-align: right; font-weight: 600;">MAD ${data.total.toLocaleString()}</td>
+                        </tr>
+                        <tr>
+                            <td>Number of Loans:</td>
+                            <td style="text-align: right;">${data.count}</td>
+                        </tr>
+                        <tr>
+                            <td>Average Loan:</td>
+                            <td style="text-align: right;">MAD ${Math.round(data.total / data.count).toLocaleString()}</td>
+                        </tr>
+                        <tr>
+                            <td>Est. Annual Interest (2.5%):</td>
+                            <td style="text-align: right; color: #ef4444;">MAD ${Math.round(data.total * 0.025).toLocaleString()}</td>
+                        </tr>
+                    </table>
+                </div>
+            `).join('');
+            
+            document.getElementById('lenderDetails').innerHTML = lenderDetailsHtml || '<p>No loan data available</p>';
+            
+            // Update Cost Category Chart
+            charts.costCategory.data.labels = charts.category.data.labels;
+            charts.costCategory.data.datasets[0].data = charts.category.data.datasets[0].data;
+            charts.costCategory.update();
+            
+            // Update Monthly Spending Chart
+            const monthlySpending = sortedMonths.map(m => processedData.monthlyData[m].outflows);
+            charts.monthlySpending.data.labels = sortedMonths.map(m => m.substring(5));
+            charts.monthlySpending.data.datasets[0].data = monthlySpending;
+            charts.monthlySpending.update();
+            
+            // Update Budget Progress Chart
+            charts.budgetProgress.data.datasets[1].data = [
+                landActual,
+                processedData.constructionSpending,
+                0, // Equipment not started
+                processedData.bankFees
+            ];
+            charts.budgetProgress.update();
+            
+            // Update Performance Trend Chart (simulated data for now)
+            const quarters = [];
+            const cpiData = [];
+            const spiData = [];
+            for (let i = 0; i < sortedMonths.length; i += 3) {
+                const quarterLabel = `Q${Math.floor(i / 3) + 1} ${sortedMonths[i]?.substring(0, 4) || ''}`;
+                quarters.push(quarterLabel);
+                cpiData.push(0.95 + Math.random() * 0.1);
+                spiData.push(0.98 + Math.random() * 0.08);
+            }
+            charts.performanceTrend.data.labels = quarters;
+            charts.performanceTrend.data.datasets[0].data = cpiData;
+            charts.performanceTrend.data.datasets[1].data = spiData;
+            charts.performanceTrend.update();
+            
+            // Update Projection Chart
+            const futureMonths = [];
+            const projectedInflows = [];
+            const projectedOutflows = [];
+            const cumulativeNet = [];
+            let cumulative = processedData.totalInflows - processedData.totalOutflows;
+            
+            for (let i = 0; i < 12; i++) {
+                const date = new Date();
+                date.setMonth(date.getMonth() + i);
+                futureMonths.push(date.toLocaleDateString('en-US', { month: 'short' }));
+                
+                // Assume quarterly loan injections
+                const inflowAmount = i % 3 === 0 ? 648000 : 0;
+                projectedInflows.push(inflowAmount);
+                
+                // Average monthly spending
+                const outflowAmount = calculateAverageMonthlySpending();
+                projectedOutflows.push(outflowAmount);
+                
+                cumulative += inflowAmount - outflowAmount;
+                cumulativeNet.push(cumulative);
+            }
+            
+            charts.projection.data.labels = futureMonths;
+            charts.projection.data.datasets[0].data = projectedInflows;
+            charts.projection.data.datasets[1].data = projectedOutflows;
+            charts.projection.data.datasets[2].data = cumulativeNet;
+            charts.projection.update();
+        }
+
+        // Tab switching functionality
+        function showTab(tabName, button) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked button
+            button.classList.add('active');
+            
+            // Update charts if needed
+            if (charts[tabName + 'Chart']) {
+                charts[tabName + 'Chart'].update();
+            }
+        }
+
+        // Refresh data
+        function refreshData() {
+            loadDataFromAPI();
+        }
+
+        // Export data
+        function exportData() {
+            if (!rawData) {
+                alert('No data to export');
+                return;
+            }
+            
+            // Create CSV content
+            let csvContent = 'Date,Description,Debit,Credit,Category\n';
+            processedData.transactions.forEach(tx => {
+                csvContent += `${tx.date},"${tx.description}",${tx.debit},${tx.credit},"${tx.category}"\n`;
+            });
+            
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `villa-bahia-financial-data-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Update cashflow chart based on period
+        function updateCashflowChart() {
+            const period = document.getElementById('cashflowPeriod').value;
+            
+            if (period === 'all') {
+                updateCharts(); // Show all data
+                return;
+            }
+            
+            // Filter data by year
+            const filteredMonths = Object.keys(processedData.monthlyData)
+                .filter(month => month.startsWith(period))
+                .sort();
+            
+            if (filteredMonths.length === 0) {
+                return;
+            }
+            
+            // Update chart with filtered data
+            charts.cashflow.data.labels = filteredMonths.map(month => {
+                const [year, monthNum] = month.split('-');
+                return new Date(year, monthNum - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            });
+            charts.cashflow.data.datasets[0].data = filteredMonths.map(m => processedData.monthlyData[m].inflows);
+            charts.cashflow.data.datasets[1].data = filteredMonths.map(m => processedData.monthlyData[m].outflows);
+            charts.cashflow.data.datasets[2].data = filteredMonths.map(m => processedData.monthlyData[m].net);
+            charts.cashflow.update();
+        }
+
+        // Filter vendors
+        function filterVendors() {
+            const filter = document.getElementById('vendorFilter').value;
+            
+            let filteredVendors = Object.entries(processedData.vendors);
+            
+            if (filter !== 'all') {
+                filteredVendors = filteredVendors.filter(([_, data]) => {
+                    const category = data.category.toLowerCase();
+                    if (filter === 'construction') return category.includes('construction') || category.includes('investissement');
+                    if (filter === 'fees') return category.includes('exploitation') || category.includes('banque');
+                    if (filter === 'loan') return category.includes('prêt') || category.includes('loan');
+                    return !category.includes('construction') && !category.includes('exploitation') && !category.includes('prêt');
+                });
+            }
+            
+            // Sort and limit to top 5
+            filteredVendors = filteredVendors.sort((a, b) => b[1].total - a[1].total).slice(0, 5);
+            
+            // Update chart
+            charts.vendor.data.labels = filteredVendors.map(([name, _]) => name);
+            charts.vendor.data.datasets[0].data = filteredVendors.map(([_, data]) => data.total);
+            charts.vendor.update();
+            
+            // Update table
+            const vendorTableHtml = filteredVendors.map(([name, data]) => `
+                <tr>
+                    <td>${name}</td>
+                    <td>${data.total.toLocaleString()}</td>
+                    <td>${data.count}</td>
+                    <td>${data.category}</td>
+                </tr>
+            `).join('');
+            document.getElementById('vendorTableBody').innerHTML = vendorTableHtml || '<tr><td colspan="4">No vendors found</td></tr>';
+        }
+
+        // Load sample data as fallback
+        function loadSampleData() {
+            console.log('Loading sample data as fallback...');
+            
+            // Generate sample data structure
+            const sampleData = {
+                transactions: [
+                    { date: '2022-03-15', description: 'Land Purchase', debit: 0, credit: 3870000, category: 'Land Acquisition' },
+                    { date: '2022-06-01', description: 'KEF INVESTMENT (Prêt)', debit: 648000, credit: 0, category: 'PRÊT' },
+                    { date: '2022-07-15', description: 'Construction Phase 1', debit: 0, credit: 450000, category: 'Investissement_Construction' },
+                    { date: '2022-09-01', description: 'KEF INVESTMENT (Prêt)', debit: 648000, credit: 0, category: 'PRÊT' },
+                    { date: '2022-10-20', description: 'Bank Fees', debit: 0, credit: 15000, category: 'Exploitation Financière' },
+                    // Add more sample transactions...
+                ],
+                summary: {
+                    totalInflows: 6480000,
+                    totalOutflows: 7875000,
+                    totalLoans: 6480000,
+                    constructionSpending: 2250000,
+                    bankFees: 85000
+                }
+            };
+            
+            // Process sample data
+            processAPIData(sampleData);
+            updateAllDisplays();
+            
+            // Update status
+            document.getElementById('syncStatus').textContent = 'Using sample data';
+            document.getElementById('dataSourceText').textContent = 'Sample data (API connection failed)';
+        }
+    </script>
+</body>
+</html>
